@@ -5,6 +5,8 @@ from selenium.webdriver import ActionChains
 import selenium
 import time
 
+OUTFILENAME = 'link_texts.txt'
+
 def scroll_click(elem, max_attempts=100000):
     for i in range(max_attempts):
         try:
@@ -47,3 +49,7 @@ while True:
         browser.execute_script("window.scrollTo(0, document.body.scrollTop);")
     else:
         break
+
+with open(OUTFILENAME, 'w') as outfile:
+    for share_link_text in share_link_texts:
+        outfile.write(share_link_text + '\n')
