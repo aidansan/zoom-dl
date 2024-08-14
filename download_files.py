@@ -28,7 +28,7 @@ def scroll_click(elem, max_attempts=100000):
             return
         except selenium.common.exceptions.ElementClickInterceptedException:
             ActionChains(browser).scroll_by_amount(0, 10).perform()
-
+            
 
 # https://stackoverflow.com/questions/34338897/python-selenium-find-out-when-a-download-has-completed
 def download_wait():
@@ -37,11 +37,18 @@ def download_wait():
     while dl_wait and seconds < MAX_DOWNLOAD_TIME:
         time.sleep(1)
         dl_wait = False
+        latest_file = None
+        latest_filetime = 0
         for fname in os.listdir(PATH_TO_DOWNLOADS):
             if fname.endswith('.crdownload'):
                 dl_wait = True
+            else:
+                cur_filetime = os.path.getctime(os.path.join(PATH_TO_DOWNLOADS, fname))
+                if  cur_filetime > latest_filetime:
+                    latest_filetime = cur_filetime
+                    latest_file = fname
         seconds += 1
-    return seconds
+    return latest_file
 
 LOGIN_TIME = 20
 MED_WAIT_TIME = 5
@@ -86,10 +93,10 @@ for link_item in link_items:
     time.sleep(SMALL_WAIT_TIME)
     download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
     download_btn.click()
-    download_wait()
+    filename = download_wait()
     meeting_information['link_info'].append({
         'link_text': link_text.split('\n')[0],
-        'filename': 'test',
+        'filename': filename,
     })
 link_information.append(meeting_information)
 
