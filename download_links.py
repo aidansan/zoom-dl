@@ -9,7 +9,6 @@ import json
 import os
 from utils import *
 from selenium.common.exceptions import NoSuchElementException
-import traceback
 
 def download_files(browser, detail_link):
     # Goes to detail page
@@ -47,7 +46,7 @@ def download_files(browser, detail_link):
             # Downloads file, and updates meeting information
             try:
                 download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
-                download_btn.click()
+                scroll_click(download_btn)
                 filename = download_wait()
                 meeting_information['link_info'].append({
                     'clip_title': clip_title,
@@ -83,10 +82,9 @@ def main():
             with open('link_information.json', 'w') as linfo_file:
                 json.dump(link_information, linfo_file, indent=2)
     except Exception as e:
-        tb_text = traceback.format_exc()
-        print(tb_text)
+        print(e)
         with open('error_dump.txt', 'w') as logfile:
-            logfile.write(str(tb_text) + '\n\n\n\n')
+            logfile.write(str(e) + '\n\n\n\n')
             html_page = browser.find_element(By.TAG_NAME, 'html').get_attribute('outerHTML')
             logfile.write(html_page + '\n')
 

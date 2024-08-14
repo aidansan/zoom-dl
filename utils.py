@@ -34,8 +34,8 @@ def scroll_click(elem, max_attempts=100000):
         try:
             elem.click()
             return
-        except selenium.common.exceptions.ElementClickInterceptedException:
-            ActionChains(browser).scroll_by_amount(0, 10).perform()
+        except (selenium.common.exceptions.ElementNotInteractableException, selenium.common.exceptions.ElementClickInterceptedException):
+            ActionChains(browser).scroll_by_amount(0, 5).perform()
 
 # https://stackoverflow.com/questions/284115/cross-platform-hidden-file-detection
 def is_hidden(filepath):
