@@ -9,17 +9,19 @@ import json
 import os
 
 PATH_TO_DOWNLOADS = "/Users/aidansan/Downloads"
+ZOOM_URL = 'https://virginia.zoom.us'
 START_DAY = "2024-06-17"
 END_DAY = "2024-07-19"
 
-START_DAY = date.fromisoformat(START_DAY)
-END_DAY = date.fromisoformat(END_DAY)
 
-
+LOGIN_TIME = 20
+MED_WAIT_TIME = 5
+SMALL_WAIT_TIME = .5
 MAX_DOWNLOAD_TIME = 360
 
-# OUTFILENAME = 'link_texts.txt'
 
+START_DAY = date.fromisoformat(START_DAY)
+END_DAY = date.fromisoformat(END_DAY)
 
 def scroll_click(elem, max_attempts=100000):
     for i in range(max_attempts):
@@ -28,7 +30,6 @@ def scroll_click(elem, max_attempts=100000):
             return
         except selenium.common.exceptions.ElementClickInterceptedException:
             ActionChains(browser).scroll_by_amount(0, 10).perform()
-            
 
 # https://stackoverflow.com/questions/34338897/python-selenium-find-out-when-a-download-has-completed
 def download_wait():
@@ -50,130 +51,81 @@ def download_wait():
         seconds += 1
     return latest_file
 
-LOGIN_TIME = 20
-MED_WAIT_TIME = 5
-SMALL_WAIT_TIME = .5
+def get_detail_page_links(browser):
+    detail_links = []
+    while True:
+        meeting_rows = browser.find_elements(By.CLASS_NAME, 'zm-table__row')
+        for meeting_row in meeting_rows:
+            cols = meeting_row.find_elements(By.TAG_NAME, 'td')
+            if len(cols) == 7:
+                date_text = cols[3].text
+                day = datetime.strptime(date_text, '%b %d, %Y %I:%M %p').date()
 
-browser = webdriver.Chrome()
+                if START_DAY <= day <= END_DAY:
+                    link = meeting_row.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                    detail_links.append(link)
 
-browser.get('https://virginia.zoom.us/signin')
+        next_page_btn = browser.find_element(By.CLASS_NAME, 'btn-next')
+        if next_page_btn.is_enabled():
+            scroll_click(next_page_btn)
+            time.sleep(SMALL_WAIT_TIME)
+            browser.execute_script("window.scrollTo(0, document.body.scrollTop);")
+        else:
+            break
+    return detail_links
 
-time.sleep(LOGIN_TIME)
-
-browser.get('https://virginia.zoom.us/recording')
-
-
-browser.get('https://virginia.zoom.us/recording/detail?meeting_id=0p5C%2Bs0cQriGZjOHQT0%2F9A%3D%3D')
-time.sleep(MED_WAIT_TIME)
-
-link_information = []
-    
-links_div = browser.find_element(By.CLASS_NAME, 'clips_content_list')
-
-accordion_heads = links_div.find_elements(By.CLASS_NAME, 'zm-icon-right')
-for ahead in accordion_heads:
-    ahead.click()
-    time.sleep(SMALL_WAIT_TIME)
-
-main_div = browser.find_element(By.ID, 'recording-detail')
-meeting_name = main_div.find_element(By.CLASS_NAME, 'topic_header').text.split('\n')[0]
-info_text = main_div.find_element(By.CLASS_NAME, 'basic-info').text
-# print(meeting_name)
-# print(info_text)
-meeting_information = {
-    'meeting_id': info_text.split('ID:')[1].strip(),
-    'meeting_name': meeting_name,
-    'meeting_info': info_text,
-    'link_info': []
-}
-link_items = links_div.find_elements(By.CLASS_NAME, 'item_list')
-for link_item in link_items:
-    link_text = link_item.text
-    ActionChains(browser).move_to_element(link_item).perform()
-    time.sleep(SMALL_WAIT_TIME)
-    download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
-    download_btn.click()
-    filename = download_wait()
-    meeting_information['link_info'].append({
-        'link_text': link_text.split('\n')[0],
-        'filename': filename,
-    })
-link_information.append(meeting_information)
-
-with open('link_information.json', 'w') as linfo_file:
-    json.dump(link_information, linfo_file, indent=2)
-
-
-import pdb
-pdb.set_trace()
-
-detail_links = []
-
-while True:
-    meeting_rows = browser.find_elements(By.CLASS_NAME, 'zm-table__row')
-
-    for meeting_row in meeting_rows:
-        # print(meeting_row.get_attribute('innerHTML'))
-        cols = meeting_row.find_elements(By.TAG_NAME, 'td')
-        if len(cols) == 7:
-            date_text = cols[3].text
-            day = datetime.strptime(date_text, '%b %d, %Y %I:%M %p').date()
-
-            if START_DAY <= day <= END_DAY:
-                link = meeting_row.find_element(By.TAG_NAME, 'a').get_attribute('href')
-                detail_links.append(link)
-
-    next_page_btn = browser.find_element(By.CLASS_NAME, 'btn-next')
-    if next_page_btn.is_enabled():
-        scroll_click(next_page_btn)
-        time.sleep(SMALL_WAIT_TIME)
-        browser.execute_script("window.scrollTo(0, document.body.scrollTop);")
-    else:
-        break
-
-
-for dlink in detail_links:
-    browser.get(dlink)
+def download_files(browser, detail_link):
+    browser.get(detail_link)
     time.sleep(MED_WAIT_TIME)
 
-    main_div = browser.find_element(By.ID, 'recording-detail')
-    meeting_name = main_div.find_element(By.CLASS_NAME, 'topic_header').text
-    info_text = main_div.find_element(By.CLASS_NAME, 'basic-info').text
+    links_div = browser.find_element(By.CLASS_NAME, 'clips_content_list')
 
-    accordion_heads = link_div.find_elements(By.CLASS_NAME, 'zm-icon-right')
+    accordion_heads = links_div.find_elements(By.CLASS_NAME, 'zm-icon-right')
     for ahead in accordion_heads:
         ahead.click()
         time.sleep(SMALL_WAIT_TIME)
-    print(meeting_name)
-    print(info_text)
-    # recording-detail
-    # topic_header
-    # basic-info
-    links_div = browser.find_element(By.CLASS_NAME, 'clips_content_list')
+
+    main_div = browser.find_element(By.ID, 'recording-detail')
+    meeting_name = main_div.find_element(By.CLASS_NAME, 'topic_header').text.split('\n')[0]
+    info_text = main_div.find_element(By.CLASS_NAME, 'basic-info').text
+
+    meeting_information = {
+        'meeting_id': info_text.split('ID:')[1].strip(),
+        'meeting_name': meeting_name,
+        'meeting_info': info_text,
+        'link_info': []
+    }
     link_items = links_div.find_elements(By.CLASS_NAME, 'item_list')
     for link_item in link_items:
+        link_text = link_item.text
         ActionChains(browser).move_to_element(link_item).perform()
         time.sleep(SMALL_WAIT_TIME)
         download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
         download_btn.click()
+        filename = download_wait()
+        meeting_information['link_info'].append({
+            'link_text': link_text.split('\n')[0],
+            'filename': filename,
+        })
+    return meeting_information
 
+def main():
+    browser = webdriver.Chrome()
 
+    browser.get(f'{ZOOM_URL}/signin')
+    time.sleep(LOGIN_TIME)
+    browser.get(f'{ZOOM_URL}/recording')
+    time.sleep(MED_WAIT_TIME)
 
+    detail_links = get_detail_page_links(browser)
 
-    # download_btns = link_div.find_elements(By.CLASS_NAME, 'zm-icon-download-alt-thin')
-    # # import pdb
-    # # pdb.set_trace()
-    # for btn in download_btns:
-    #     ActionChains(browser).move_to_element(btn).perform()
-    #     time.sleep(SMALL_WAIT_TIME)
-    #     # ActionChains(browser).move_to_element(btn).perform()
-    #     # download_btns[0].click()
-    #     btn.click()
-    #     time.sleep(MED_WAIT_TIME)
+    link_information = []
+    for dlink in detail_links:
+        meeting_information = download_files(browser, dlink)
+        link_information.append(meeting_information)
 
-    import pdb
-    pdb.set_trace()
+        with open('link_information.json', 'w') as linfo_file:
+            json.dump(link_information, linfo_file, indent=2)
 
-# with open(OUTFILENAME, 'w') as outfile:
-#     for share_link_text in share_link_texts:
-#         outfile.write(share_link_text + '\n')
+if __name__ == '__main__':
+    main()
