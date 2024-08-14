@@ -1,5 +1,5 @@
 (Need to have chrome installed)
-1. Strongly recommended: Clear out your downloads folder
+1. Strongly recommended: Clear out your downloads folder (Need to remove any SOMEFILE.crdownload files from download folder)
 2. Update the constants in utils.py
 3. pip install -U selenium
 4. Run the get_links.py file
