@@ -10,11 +10,13 @@ import os
 from utils import *
 
 def download_files(browser, detail_link):
+    # Goes to detail page
     browser.get(detail_link)
     time.sleep(MED_WAIT_TIME)
 
     links_div = browser.find_element(By.CLASS_NAME, 'clips_content_list')
 
+    # Opens up any collapsed accordions which may have more files in them
     accordion_heads = links_div.find_elements(By.CLASS_NAME, 'zm-icon-right')
     for ahead in accordion_heads:
         ahead.click()
@@ -33,8 +35,12 @@ def download_files(browser, detail_link):
     link_items = links_div.find_elements(By.CLASS_NAME, 'item_list')
     for link_item in link_items:
         link_text = link_item.text
+
+        # Moves cursor to row in table, so that download button shows up
         ActionChains(browser).move_to_element(link_item).perform()
         time.sleep(SMALL_WAIT_TIME)
+
+        # Downloads file, and updates meeting information
         download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
         download_btn.click()
         filename = download_wait()
