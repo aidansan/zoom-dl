@@ -15,14 +15,6 @@ def download_files(browser, detail_link):
     browser.get(detail_link)
     time.sleep(MED_WAIT_TIME)
 
-    links_div = browser.find_element(By.CLASS_NAME, 'clips_content_list')
-
-    # Opens up any collapsed accordions which may have more files in them
-    accordion_heads = links_div.find_elements(By.CLASS_NAME, 'zm-icon-right')
-    for ahead in accordion_heads:
-        ahead.click()
-        time.sleep(SMALL_WAIT_TIME)
-
     main_div = browser.find_element(By.ID, 'recording-detail')
     meeting_name = main_div.find_element(By.CLASS_NAME, 'topic_header').text.split('\n')[0]
     info_text = main_div.find_element(By.CLASS_NAME, 'basic-info').text
@@ -33,29 +25,41 @@ def download_files(browser, detail_link):
         'meeting_info': info_text,
         'link_info': []
     }
-    link_items = links_div.find_elements(By.CLASS_NAME, 'item_list')
-    for link_item in link_items:
-        link_text = link_item.text
+    clips_containers = browser.find_elements(By.CLASS_NAME, 'clips_container')
+    for clips_container in clips_containers:
+        clip_title = clips_container.find_element(By.CLASS_NAME, 'clip_title').text
+        links_div = clips_container.find_element(By.CLASS_NAME, 'clips_content_list')
+        # Opens up any collapsed accordions which may have more files in them
+        accordion_heads = links_div.find_elements(By.CLASS_NAME, 'zm-icon-right')
+        for ahead in accordion_heads:
+            scroll_click(ahead)
+            time.sleep(SMALL_WAIT_TIME)
+    
+        link_items = links_div.find_elements(By.CLASS_NAME, 'item_list')
+        for link_item in link_items:
+            link_text = link_item.text
 
-        # Moves cursor to row in table, so that download button shows up
-        ActionChains(browser).move_to_element(link_item).perform()
-        time.sleep(SMALL_WAIT_TIME)
+            # Moves cursor to row in table, so that download button shows up
+            ActionChains(browser).move_to_element(link_item).perform()
+            time.sleep(SMALL_WAIT_TIME)
 
-        # Downloads file, and updates meeting information
-        try:
-            download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
-            download_btn.click()
-            filename = download_wait()
-            meeting_information['link_info'].append({
-                'link_text': link_text.split('\n')[0],
-                'filename': filename,
-            })
-        except NoSuchElementException as e:
-            meeting_information['link_info'].append({
-                'link_text': link_text.split('\n')[0],
-                'filename': 'MISSING FILE',
-            })
-            print('MISSING FILE')
+            # Downloads file, and updates meeting information
+            try:
+                download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
+                download_btn.click()
+                filename = download_wait()
+                meeting_information['link_info'].append({
+                    'clip_title': clip_title,
+                    'link_text': link_text.split('\n')[0],
+                    'filename': filename
+                })
+            except NoSuchElementException as e:
+                meeting_information['link_info'].append({
+                    'clip_title': clip_title,
+                    'link_text': link_text.split('\n')[0],
+                    'filename': 'MISSING FILE',
+                })
+                print('MISSING FILE')
 
     return meeting_information
 
