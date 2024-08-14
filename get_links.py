@@ -20,7 +20,7 @@ def get_detail_page_link_data(browser):
         meeting_rows = browser.find_elements(By.CLASS_NAME, 'zm-table__row')
         for meeting_row in meeting_rows:
             cols = meeting_row.find_elements(By.TAG_NAME, 'td')
-            if len(cols) == 7:
+            if len(cols) >=5:
                 meeting_name = cols[1].text
                 meeting_id = cols[2].text
                 date_text = cols[3].text

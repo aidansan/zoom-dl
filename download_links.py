@@ -8,6 +8,7 @@ from datetime import date, datetime
 import json
 import os
 from utils import *
+from selenium.common.exceptions import NoSuchElementException
 
 def download_files(browser, detail_link):
     # Goes to detail page
@@ -41,33 +42,47 @@ def download_files(browser, detail_link):
         time.sleep(SMALL_WAIT_TIME)
 
         # Downloads file, and updates meeting information
-        download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
-        download_btn.click()
-        filename = download_wait()
-        meeting_information['link_info'].append({
-            'link_text': link_text.split('\n')[0],
-            'filename': filename,
-        })
+        try:
+            download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
+            download_btn.click()
+            filename = download_wait()
+            meeting_information['link_info'].append({
+                'link_text': link_text.split('\n')[0],
+                'filename': filename,
+            })
+        except NoSuchElementException as e:
+            meeting_information['link_info'].append({
+                'link_text': link_text.split('\n')[0],
+                'filename': 'MISSING FILE',
+            })
+            print('MISSING FILE')
+
     return meeting_information
 
 def main():
     browser = webdriver.Chrome()
+    try:
+        browser.get(f'{ZOOM_URL}/signin')
+        time.sleep(LOGIN_TIME)
 
-    browser.get(f'{ZOOM_URL}/signin')
-    time.sleep(LOGIN_TIME)
+        with open('download_links.tsv') as infile:
+            detail_links = [line.split('\t')[0] for line in infile.readlines()]
+        
+        # detail_links = detail_links[:5]
 
-    with open('download_links.tsv') as infile:
-        detail_links = [line.split('\t')[0] for line in infile.readlines()]
-    
-    # detail_links = detail_links[:5]
+        link_information = []
+        for dlink in detail_links:
+            meeting_information = download_files(browser, dlink)
+            link_information.append(meeting_information)
 
-    link_information = []
-    for dlink in detail_links:
-        meeting_information = download_files(browser, dlink)
-        link_information.append(meeting_information)
+            with open('link_information.json', 'w') as linfo_file:
+                json.dump(link_information, linfo_file, indent=2)
+    except Exception as e:
+        with open('error_dump.txt', 'w') as logfile:
+            logfile.write(str(e) + '\n\n\n\n')
+            html_page = browser.find_element(By.TAG_NAME, 'html').get_attribute('outerHTML')
+            logfile.write(html_page + '\n')
 
-        with open('link_information.json', 'w') as linfo_file:
-            json.dump(link_information, linfo_file, indent=2)
 
 if __name__ == '__main__':
     main()
