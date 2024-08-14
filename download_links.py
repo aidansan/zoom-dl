@@ -9,6 +9,7 @@ import json
 import os
 from utils import *
 from selenium.common.exceptions import NoSuchElementException
+import traceback
 
 def download_files(browser, detail_link):
     # Goes to detail page
@@ -82,9 +83,10 @@ def main():
             with open('link_information.json', 'w') as linfo_file:
                 json.dump(link_information, linfo_file, indent=2)
     except Exception as e:
-        print(e)
+        tb_text = traceback.format_exc()
+        print(tb_text)
         with open('error_dump.txt', 'w') as logfile:
-            logfile.write(str(e) + '\n\n\n\n')
+            logfile.write(str(tb_text) + '\n\n\n\n')
             html_page = browser.find_element(By.TAG_NAME, 'html').get_attribute('outerHTML')
             logfile.write(html_page + '\n')
 
