@@ -53,7 +53,7 @@ def main():
     with open('download_links.tsv') as infile:
         detail_links = [line.split('\t')[0] for line in infile.readlines()]
     
-    detail_links = detail_links[:5]
+    # detail_links = detail_links[:5]
 
     link_information = []
     for dlink in detail_links:
