@@ -35,7 +35,7 @@ def get_detail_page_link_data(browser):
         # Goes to the next page of links
         next_page_btn = browser.find_element(By.CLASS_NAME, 'btn-next')
         if next_page_btn.is_enabled():
-            scroll_click(next_page_btn)
+            scroll_click(next_page_btn, browser)
             time.sleep(SMALL_WAIT_TIME)
             browser.execute_script("window.scrollTo(0, document.body.scrollTop);")
         else:

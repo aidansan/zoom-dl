@@ -32,7 +32,7 @@ def download_files(browser, detail_link):
         # Opens up any collapsed accordions which may have more files in them
         accordion_heads = links_div.find_elements(By.CLASS_NAME, 'zm-icon-right')
         for ahead in accordion_heads:
-            scroll_click(ahead)
+            scroll_click(ahead, browser)
             time.sleep(SMALL_WAIT_TIME)
     
         link_items = links_div.find_elements(By.CLASS_NAME, 'item_list')
@@ -46,7 +46,7 @@ def download_files(browser, detail_link):
             # Downloads file, and updates meeting information
             try:
                 download_btn = link_item.find_element(By.CLASS_NAME, 'zm-icon-download-alt-thin')
-                scroll_click(download_btn)
+                scroll_click(download_btn, browser)
                 filename = download_wait()
                 meeting_information['link_info'].append({
                     'clip_title': clip_title,

@@ -29,7 +29,7 @@ START_DAY = date.fromisoformat(START_DAY)
 END_DAY = date.fromisoformat(END_DAY)
 
 # Continuously scrolls a little bit until you are able to click the button
-def scroll_click(elem, max_attempts=100000):
+def scroll_click(elem, browser, max_attempts=100000):
     for i in range(max_attempts):
         try:
             elem.click()
